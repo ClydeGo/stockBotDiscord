@@ -2,19 +2,20 @@ const express = require('express');
 const app = express();
 require('dotenv').config();
 const { Client } = require('discord.js');
+const { TradingViewAPI } = require('tradingview-scraper');
 const puppeteer = require('puppeteer');
 
-
+const tv = new TradingViewAPI();
 const client = new Client();
 const PREFIX = "$"
 const stocks = [
     {
         name: 'GNUS',
-        sl: '1.61',
+        sl: '1.60',
     },
     {
         name: 'NIO',
-        sl: '45'
+        sl: '41.34'
     },
     {
         name: 'TSLA',
@@ -22,12 +23,21 @@ const stocks = [
     },
     {
         name: 'JNJ',
-        sl: '158'
+        sl: '159'
     },
     {
         name: 'HEC',
-        sl: '10.10'
-    }
+        sl: '10.15'
+    },
+    {
+        name: 'GBS',
+        sl: '7.60'
+    },
+    {
+        name: 'CLVR',
+        sl: '13.15'
+    },
+
 ];
 
 client.login(process.env.BOTTOKEN);
@@ -40,38 +50,68 @@ client.on('ready', async () => {
     
     let timer = setInterval(() => {
         PingMe(stocks, channel);
-    }, 10000);
+        clearInterval(timer);
+    }, 1000);
 });
 
 async function PingMe(stocks, channel){
+    console.log(stocks);
     stocks.forEach(async (stock) => {
         console.log(stock);
         let res = await scrapeStock(stock);
-        if(res === true) {
+        if(res[0] === true) {
             console.log('alert triggered');
-            channel.send(`${stock.name} is below stop loss of ${stock.sl}. gotta take a look`);
+            channel.send(`${stock.name} is below stop loss of ${stock.sl}. Current price is ${res[1]}`);
         }
     });
 }
 
-async function scrapeStock(stock) {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-
-    await page.goto('https://www.google.com/');
-    await page.click('[name = q]');
-    await page.keyboard.type(stock.name + ' stock');
-    await page.keyboard.press('Enter');
-    await page.waitForSelector('[jsname = vWLAgc]');
-    let element = await page.$('[jsname = vWLAgc]');
-    let value = await page.evaluate(el => el.textContent, element);
-    console.log(value);
-    await browser.close();
-    if(value >= stock.sl){
+async function scrapeStock(stock){
+    try {
+        let value = await tv.getTicker(stock.name);
+        
+        if(value.lp === undefined) {
+            return false;
+        }
+        if(value.lp >= stock.sl){
+            console.log(`safe ${stock.name}: ${value.lp}`);
+            return [false, value.lp];
+        }
+        console.log(`cut ${stock.name}: ${value.lp}`);
+        return [true, value.lp];
+    }
+    catch(err){
+        console.log('error');
         return false;
     }
-    return true;
 }
+
+// google scrape old imp
+// async function scrapeStock(stock) {
+
+//     try {
+//         const browser = await puppeteer.launch();
+//         const page = await browser.newPage();
+    
+//         await page.goto('https://www.google.com/');
+//         await page.click('[name = q]');
+//         await page.keyboard.type(stock.name + ' stock');
+//         await page.keyboard.press('Enter');
+//         await page.waitForSelector('[jsname = vWLAgc]');
+//         let element = await page.$('[jsname = vWLAgc]');
+//         let value = await page.evaluate(el => el.textContent, element);
+//         console.log(stock.name, value);
+//         await browser.close();
+//         if(value >= stock.sl){
+//             return [false, value];
+//         }
+//         return [true, value];
+//     }
+//     catch(err){
+//         console.log('error');
+//         return false;
+//     }
+// }
 
 client.on('message', (message) => {
     if(message.author.bot === true ) return;
