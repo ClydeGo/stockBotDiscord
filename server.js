@@ -4,10 +4,17 @@ require('dotenv').config();
 const { Client } = require('discord.js');
 const { TradingViewAPI } = require('tradingview-scraper');
 const puppeteer = require('puppeteer');
-
+const MongoClient = require('mongodb').MongoClient;
+const uri = process.env.DBURL;
+const mongo =  MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+let channel;
 const tv = new TradingViewAPI();
 const client = new Client();
 const PREFIX = "$"
+const db = mongo.connect( err => {
+    if(err) console.log(err);
+    client.login(process.env.BOTTOKEN);
+});
 const stocks = [
     {
         name: 'GNUS',
@@ -15,43 +22,43 @@ const stocks = [
     },
     {
         name: 'NIO',
-        sl: '41.34'
+        sl: '39.57'
     },
     {
         name: 'TSLA',
-        sl: '650'
+        sl: '649.33'
     },
     {
         name: 'JNJ',
-        sl: '159'
+        sl: '156.75'
     },
     {
         name: 'HEC',
-        sl: '10.15'
+        sl: '10.37'
     },
     {
         name: 'GBS',
-        sl: '7.60'
+        sl: '6.94'
     },
     {
         name: 'CLVR',
-        sl: '13.15'
+        sl: '12.75'
     },
 
 ];
 
-client.login(process.env.BOTTOKEN);
+
 
 client.on('ready', async () => {
     console.log(`bot is ready ${client.user.tag}`);
 
     const user = await client.users.fetch(process.env.USERID).catch(() => null);
-    const channel = await client.channels.cache.find(channel => channel.id === process.env.CHANNELID);
-    
-    let timer = setInterval(() => {
-        PingMe(stocks, channel);
-        clearInterval(timer);
-    }, 1000);
+    channel = await client.channels.cache.find(channel => channel.id === process.env.CHANNELID);
+
+    // let timer = setInterval(() => {
+    //     PingMe(stocks, channel);
+    //     clearInterval(timer);
+    // }, 1000);
 });
 
 async function PingMe(stocks, channel){
@@ -86,6 +93,88 @@ async function scrapeStock(stock){
     }
 }
 
+client.on('message', (message) => {
+    console.log('message');
+    if(message.author.bot === true ) return;
+
+    if(message.content.startsWith(PREFIX)) {
+        // keep this in mind
+        const [command, ...args] = message.content.substring(PREFIX.length).split(/\s+/);
+        console.log(`this is command ${command}`);
+        if(command === 'delete') {
+            console.log('coommand is delete');
+            channel.bulkDelete(100)
+            .then(messages => console.log(`Bulk deleted ${messages.size} messages`))
+            .catch(console.error); 
+        }
+
+        if(command === 'add') {
+            console.log('command is add');
+            addCommand(message, args);
+        }
+    }
+});
+
+async function addCommand(message, args){
+    console.log(args);
+    let test = args[0].split('+');
+    console.log(test);
+    let exist = await userExist(message.author.id);
+
+    const data = {
+        userID: message.author.id,
+        username: message.author.username,
+        usernumber: message.author.discriminator,
+        stockAlerts: [
+        ]
+    }
+
+    await args.forEach(stock => {
+        let temp = stock.split('+');
+        let obj = {
+            stockName: temp[0],
+            cutloss: temp[1]
+        }
+        data.stockAlerts.push(obj);
+    });
+
+    
+    if(exist){
+        console.log('user exist');
+    } else {
+        console.log('user does not exist');
+        addNewUser(data);
+    }
+}
+
+async function addNewUser(data){
+    console.log(data);
+    const collection = await mongo.db("stockAlerts").collection("Alerts");
+    collection.insertOne(data, function(err , res){
+        if(err) throw err;
+        console.log(`${data.username}#${data.usernumber} has been inserted with the given data`);
+    });
+}
+
+
+
+async function userExist(userID){
+    const collection = await mongo.db("stockAlerts").collection("Alerts");
+    const user = await collection.findOne({userID: userID});
+    if(user){
+        return true;
+    } else {
+        return false;
+    }
+
+}
+
+
+const port = process.env.PORT | 3000;
+app.listen(port, async (req,res) => {
+    console.log(`listening to port ${port}`);
+});
+
 // google scrape old imp
 // async function scrapeStock(stock) {
 
@@ -112,26 +201,3 @@ async function scrapeStock(stock){
 //         return false;
 //     }
 // }
-
-client.on('message', (message) => {
-    if(message.author.bot === true ) return;
-    console.log(client.channels.cache, 'these are channels');
-
-    if(message.content.startsWith(PREFIX)) {
-        // keep this in mind
-        const [commands, ...args] = message.content.substring(PREFIX.length).split(/\s+/);
-        
-        if(commands === 'add') {
-            args.forEach(el => {
-                // message.channel.send(`User ${el} has been kicked`); 
-                // TODO add stock to watchlist
-            });
-        }
-    }
-});
-
-
-const port = process.env.PORT | 3000;
-app.listen(port, (req,res) => {
-    console.log(`listening to port ${port}`);
-});
