@@ -11,54 +11,16 @@ let channel;
 const tv = new TradingViewAPI();
 const client = new Client();
 const PREFIX = "$"
-const db = mongo.connect( err => {
+mongo.connect( err => {
     if(err) console.log(err);
     client.login(process.env.BOTTOKEN);
 });
-const stocks = [
-    {
-        name: 'GNUS',
-        sl: '1.60',
-    },
-    {
-        name: 'NIO',
-        sl: '39.57'
-    },
-    {
-        name: 'TSLA',
-        sl: '649.33'
-    },
-    {
-        name: 'JNJ',
-        sl: '156.75'
-    },
-    {
-        name: 'HEC',
-        sl: '10.37'
-    },
-    {
-        name: 'GBS',
-        sl: '6.94'
-    },
-    {
-        name: 'CLVR',
-        sl: '12.75'
-    },
-
-];
-
-
 
 client.on('ready', async () => {
     console.log(`bot is ready ${client.user.tag}`);
 
     const user = await client.users.fetch(process.env.USERID).catch(() => null);
     channel = await client.channels.cache.find(channel => channel.id === process.env.CHANNELID);
-
-    // let timer = setInterval(() => {
-    //     PingMe(stocks, channel);
-    //     clearInterval(timer);
-    // }, 1000);
 });
 
 async function PingMe(stocks, channel){
@@ -141,9 +103,18 @@ async function addCommand(message, args){
     
     if(exist){
         console.log('user exist');
+        try {
+            updateUserAlerts(data);
+        } catch(err) {
+            console.log(err);
+        }
     } else {
         console.log('user does not exist');
-        addNewUser(data);
+        try {
+            addNewUser(data);
+        } catch(err) {
+            console.log(err);
+        }
     }
 }
 
@@ -153,6 +124,21 @@ async function addNewUser(data){
     collection.insertOne(data, function(err , res){
         if(err) throw err;
         console.log(`${data.username}#${data.usernumber} has been inserted with the given data`);
+    });
+}
+
+async function updateUserAlerts(data){
+    const collection = await mongo.db("stockAlerts").collection("Alerts");
+    let user = await getUser(data.userID);
+    console.log(user, 'user');
+    console.log(data, 'data');
+
+    let tempAlerts = await removeDuplicates(user.stockAlerts, data.stockAlerts);
+
+    console.log(tempAlerts);
+    collection.updateOne({userID: user.userID}, {$set : {stockAlerts: tempAlerts}}, function(err, res){
+        if(err) throw err;
+        console.log(`${data.username} has updated alert list`, tempAlerts);
     });
 }
 
@@ -166,9 +152,30 @@ async function userExist(userID){
     } else {
         return false;
     }
-
 }
 
+async function getUser(userID) {
+    const collection = await mongo.db("stockAlerts").collection("Alerts");
+    const user = await collection.findOne({userID: userID});
+    return user;
+}
+
+async function removeDuplicates(currentData, newData) {
+    //TODO
+    let tempStocks = newData;
+    if(!currentData) {
+        return newData;
+    }
+
+    await currentData.forEach(el => {
+        let tempStock = newData.find(x => x.stockName === el.stockName);
+        if(!tempStock){
+            tempStocks.push(el);
+        }
+    });
+    console.log(tempStocks);
+    return tempStocks;
+}
 
 const port = process.env.PORT | 3000;
 app.listen(port, async (req,res) => {
