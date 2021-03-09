@@ -56,8 +56,8 @@ async function scrapeStock(stock){
 }
 
 client.on('message', (message) => {
-    console.log('message');
     if(message.author.bot === true ) return;
+    
 
     if(message.content.startsWith(PREFIX)) {
         // keep this in mind
@@ -71,8 +71,18 @@ client.on('message', (message) => {
         }
 
         if(command === 'add') {
-            console.log('command is add');
-            addCommand(message, args);
+            let temp = /^((\$add)(\ [A-Z]*\+([0-9]*)(\.([0-9]){1,4})?)*)$/.test(message.content);
+            console.log(temp);
+            if(temp === false){
+                message.channel.send('Please follow add message format');
+                console.log('hit')
+            }else {
+                addCommand(message, args);
+            };
+        }
+
+        if(command === 'delete'){
+            
         }
     }
 });
