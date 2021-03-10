@@ -246,10 +246,13 @@ async function removeDuplicates(currentData, newData) {
     return tempStocks;
 }
 
+app.get('/', function(req,res){
+    res.send('Bot should be running, Hello!');
+});
+
 const port = process.env.PORT | 3000;
 app.listen(port, async (req,res) => {
     console.log(`listening to port ${port}`);
-    res.send("Bot is running, Hello!");
 });
 
 // google scrape old imp
