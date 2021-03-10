@@ -254,7 +254,7 @@ app.get('/', function(req,res){
     res.render('test');
 });
 
-const port = process.env.PORT | 3000;
+const port = process.env.PORT || 3000;
 app.listen(port, async (req,res) => {
     console.log(`listening to port ${port}`);
 });
