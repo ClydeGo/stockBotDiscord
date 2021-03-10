@@ -1,5 +1,7 @@
 const express = require('express');
 const app = express();
+app.set('view engine', 'html');
+app.engine('html', require('ejs').renderFile);
 require('dotenv').config();
 const { Client } = require('discord.js');
 const { TradingViewAPI } = require('tradingview-scraper');
@@ -9,6 +11,7 @@ const uri = process.env.DBURL;
 const mongo =  MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 let channel;
 let job = [];
+;
 const tv = new TradingViewAPI();
 const client = new Client();
 const PREFIX = "$"
@@ -17,6 +20,7 @@ mongo.connect( err => {
     if(err) console.log(err);
     client.login(process.env.BOTTOKEN);
 });
+
 
 client.on('ready', async () => {
     console.log(`bot is ready ${client.user.tag}`);
@@ -247,7 +251,7 @@ async function removeDuplicates(currentData, newData) {
 }
 
 app.get('/', function(req,res){
-    res.send('Bot should be running, Hello!');
+    res.render('test');
 });
 
 const port = process.env.PORT | 3000;
