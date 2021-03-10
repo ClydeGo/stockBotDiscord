@@ -108,10 +108,12 @@ client.on('message', (message) => {
         }
 
         if(command === 'set'){
-            try {
-                setTimer(message, args[0]);
-            } catch(e) {
-                console.log(e);
+            if(args.length !== 0) {
+                try {
+                    setTimer(message, args[0]);
+                } catch(e) {
+                    console.log(e);
+                }
             }
         }
     }
