@@ -101,6 +101,7 @@ client.on('message', (message) => {
         if(command === 'stop'){
             if(job[message.author.id] !== undefined){
                 job[message.author.id].cancel();
+                console.log(job[message.author.id]);
                 channel.send(`<@${message.author.id}> has ended alerts`);
             } else {
                 channel.send(`<@${message.author.id}> no ongoing alerts`);
