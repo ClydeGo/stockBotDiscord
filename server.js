@@ -140,6 +140,8 @@ async function sendAlerts(message){
     let user = await getUser(message.author.id);
     let stocks = user.stockAlerts;
     if(stocks){
+        job[message.author.id].cancel();
+        job[message.author.id] = undefined;
         channel.send(`<@${message.author.id}> has started alerts interval of ${user.interval}`);
         job[message.author.id] = schedule.scheduleJob(`${user.interval} * * * * *`, function(){
             var current = new Date();
