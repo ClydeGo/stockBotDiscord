@@ -108,7 +108,7 @@ client.on('message', (message) => {
         }
 
         if(command === 'set'){
-            if(args.length !== 0) {
+            if(args.length !== 0 && args[0] > 0 && args[0] < 60) {
                 try {
                     setTimer(message, args[0]);
                 } catch(e) {
