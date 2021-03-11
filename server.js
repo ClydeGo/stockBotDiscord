@@ -5,7 +5,6 @@ app.engine('html', require('ejs').renderFile);
 require('dotenv').config();
 const { Client } = require('discord.js');
 const { TradingViewAPI } = require('tradingview-scraper');
-const puppeteer = require('puppeteer');
 const MongoClient = require('mongodb').MongoClient;
 const uri = process.env.DBURL;
 const mongo =  MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -65,12 +64,14 @@ client.on('message', (message) => {
     if(message.content.startsWith(PREFIX)) {
         // keep this in mind
         const [command, ...args] = message.content.substring(PREFIX.length).split(/\s+/);
-        console.log(`this is command ${command}`);
+        console.log(`this is command ${command}`, args);
         if(command === 'delete') {
-            console.log('coommand is delete');
-            channel.bulkDelete(100)
-            .then(messages => console.log(`Bulk deleted ${messages.size} messages`))
-            .catch(console.error); 
+            if(message.author.id === process.env.USERID){
+                console.log('coommand is delete');
+                channel.bulkDelete(100)
+                .then(messages => console.log(`Bulk deleted ${messages.size} messages`))
+                .catch(console.error); 
+            }
         }
 
         if(command === 'add') {
@@ -80,6 +81,10 @@ client.on('message', (message) => {
             }else {
                 addCommand(message, args);
             };
+        }
+
+        if(command === 'remove'){
+            removeCommand(message, args);
         }
 
         if(command === 'clear'){
@@ -119,6 +124,10 @@ client.on('message', (message) => {
                 }
             }
         }
+
+        if(command === 'list'){
+            alertList(message);
+        }
     }
 });
 
@@ -132,6 +141,46 @@ async function setTimer(message, min){
         });
     } else {
         channel.send(`<@${message.author.id}> please add an alert list first`);
+    }
+}
+
+async function alertList(message){
+    let user = await getUser(message.author.id);
+    let stocks = user.stockAlerts;
+    if(stocks){
+        channel.send(`<@${message.author.id}> alert list:`);
+        stocks.forEach(stock => {
+            channel.send(`${stock.stockName} : ${stock.cutloss}`);
+        });
+    } else {
+        channel.send(`<@${message.author.id}> alert list is empty`);
+    }
+}
+
+async function removeCommand(message, args){
+    let exist = await getUser(message.author.id);
+    if(exist) {
+        let stocks = await removeStocks(message, args);
+        const collection = await mongo.db('stockAlerts').collection('Alerts');
+        collection.updateOne({userID: message.author.id}, {$set: {stockAlerts: stocks}}, function(err, res){
+            if(err) throw err;
+            channel.send(`<@${message.author.id}> has removed ${args} from list`);
+        });
+    } else {
+        channel.send(`<@${message.author.id}> please add an alert list first`);
+    }
+}
+
+async function removeStocks(message, args){
+    if(args.length !== 0){
+        let user = await getUser(message.author.id);
+        let stocks = user.stockAlerts;
+        if(stocks) {
+            args.forEach(el => {
+                stocks = stocks.filter(x => x.stockName !== el);
+            });
+        }
+        return stocks;
     }
 }
 
@@ -167,7 +216,6 @@ async function clearAlerts(data){
 }
 
 async function addCommand(message, args){
-    let test = args[0].split('+');
     let exist = await userExist(message.author.id);
 
     const data = {
@@ -267,30 +315,3 @@ const port = process.env.PORT || 3000;
 app.listen(port, async (req,res) => {
     console.log(`listening to port ${port}`);
 });
-
-// google scrape old imp
-// async function scrapeStock(stock) {
-
-//     try {
-//         const browser = await puppeteer.launch();
-//         const page = await browser.newPage();
-    
-//         await page.goto('https://www.google.com/');
-//         await page.click('[name = q]');
-//         await page.keyboard.type(stock.name + ' stock');
-//         await page.keyboard.press('Enter');
-//         await page.waitForSelector('[jsname = vWLAgc]');
-//         let element = await page.$('[jsname = vWLAgc]');
-//         let value = await page.evaluate(el => el.textContent, element);
-//         console.log(stock.name, value);
-//         await browser.close();
-//         if(value >= stock.sl){
-//             return [false, value];
-//         }
-//         return [true, value];
-//     }
-//     catch(err){
-//         console.log('error');
-//         return false;
-//     }
-// }
