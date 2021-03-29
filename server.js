@@ -33,12 +33,12 @@ async function PingMe(stocks, channel, user){
         let res = await scrapeStock(stock);
         if(res[0] === true) {
             console.log('alert triggered');
-            channel.send(`<@${user.id}> position ${stock.stockName} is below stop loss of ${stock.cutloss}. Current price is ${res[1]}`);
+            channel.send(`<@${user.id}> position ${stock.stockName} is above buy price of ${stock.cutloss}. Current price is ${res[1]}`);
         }
     });
 }
 
-async function scrapeStock(stock){
+async function scrapeStockNegative(stock){
     try {
         let value = await tv.getTicker(stock.stockName);
         if(value.lp === undefined) {
@@ -49,6 +49,25 @@ async function scrapeStock(stock){
             return [false, value.lp];
         }
         console.log(`cut ${stock.stockName}: ${value.lp}`);
+        return [true, value.lp];
+    }
+    catch(err){
+        console.log(err);
+        return false;
+    }
+}
+
+async function scrapeStock(stock){
+    try {
+        let value = await tv.getTicker(stock.stockName);
+        if(value.lp === undefined) {
+            return false;
+        }
+        if(value.lp <= stock.cutloss){
+            console.log(`safe ${stock.stockName}: ${value.lp}`);
+            return [false, value.lp];
+        }
+        console.log(`buy ${stock.stockName}: ${value.lp}`);
         return [true, value.lp];
     }
     catch(err){
