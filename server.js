@@ -102,6 +102,15 @@ client.on('message', (message) => {
             };
         }
 
+        if(command === 'coin') {
+            let temp = /^((\$add)(\ [A-Z]*\+([0-9]*)(\.([0-9]){1,4})?)*)$/.test(message.content);
+            if(temp === false){
+                message.channel.send('Please follow add message format');
+            }else {
+                addCommand(message, args, true);
+            };
+        }
+
         if(command === 'remove'){
             removeCommand(message, args);
         }
@@ -234,7 +243,7 @@ async function clearAlerts(data){
     }});
 }
 
-async function addCommand(message, args){
+async function addCommand(message, args, coin){
     let exist = await userExist(message.author.id);
 
     const data = {
@@ -245,15 +254,28 @@ async function addCommand(message, args){
         stockAlerts: [
         ]
     }
+     
+    if(coin){
+        await args.forEach(stock => {
+            let temp = stock.split('+');
+            let obj = {
+                stockName: 'BINANCE:' + temp[0],
+                cutloss: temp[1]
+            }
+            data.stockAlerts.push(obj);
+        });
 
-    await args.forEach(stock => {
-        let temp = stock.split('+');
-        let obj = {
-            stockName: temp[0],
-            cutloss: temp[1]
-        }
-        data.stockAlerts.push(obj);
-    });
+        console.log(data.stockAlerts);
+    } else {
+        await args.forEach(stock => {
+            let temp = stock.split('+');
+            let obj = {
+                stockName: temp[0],
+                cutloss: temp[1]
+            }
+            data.stockAlerts.push(obj);
+        });
+    }
 
     
     if(exist){
