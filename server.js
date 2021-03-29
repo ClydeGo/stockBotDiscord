@@ -103,7 +103,7 @@ client.on('message', (message) => {
         }
 
         if(command === 'coin') {
-            let temp = /^((\$add)(\ [A-Z]*\+([0-9]*)(\.([0-9]){1,4})?)*)$/.test(message.content);
+            let temp = /^((\$coin)(\ [A-Z]*\+([0-9]*)(\.([0-9]){1,4})?)*)$/.test(message.content);
             if(temp === false){
                 message.channel.send('Please follow add message format');
             }else {
