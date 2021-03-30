@@ -28,12 +28,13 @@ client.on('ready', async () => {
     channel = await client.channels.cache.find(channel => channel.id === process.env.CHANNELID);
 });
 
-async function PingMe(stocks, channel, user){
+async function PingMe(stocks, channel, user, message){
     stocks.forEach(async (stock) => {
         let res = await scrapeStock(stock);
         if(res[0] === true) {
             console.log('alert triggered');
-            channel.send(`<@${user.id}> position ${stock.stockName} is above buy price of ${stock.cutloss}. Current price is ${res[1]}`);
+            message.author.send(`<@${user.id}> position ${stock.stockName} is above buy price of ${stock.cutloss}. Current price is ${res[1]}`);
+            // channel.send(`<@${user.id}> position ${stock.stockName} is above buy price of ${stock.cutloss}. Current price is ${res[1]}`);
         }
     });
 }
@@ -176,12 +177,14 @@ async function alertList(message){
     let user = await getUser(message.author.id);
     let stocks = user.stockAlerts;
     if(stocks){
-        channel.send(`<@${message.author.id}> alert list:`);
+        message.author.send(`<@${message.author.id}> alert list:`);
+        let messagelist = '';
         stocks.forEach(stock => {
-            channel.send(`${stock.stockName} : ${stock.cutloss}`);
+            messagelist += `${stock.stockName} : ${stock.cutloss}` + '\n';
         });
+        message.author.send(messagelist);
     } else {
-        channel.send(`<@${message.author.id}> alert list is empty`);
+        message.author.send(`<@${message.author.id}> alert list is empty`);
     }
 }
 
@@ -225,7 +228,7 @@ async function sendAlerts(message){
         job[message.author.id] = schedule.scheduleJob(`${user.interval} * * * * *`, function(){
             var current = new Date();
             console.log(current);
-            PingMe(stocks, channel, message.author);
+            PingMe(stocks, channel, message.author, message);
         });
     } else {
         message.channel.send(`User has no stocks in alert list`);
