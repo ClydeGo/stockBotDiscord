@@ -23,8 +23,6 @@ mongo.connect( err => {
 
 client.on('ready', async () => {
     console.log(`bot is ready ${client.user.tag}`);
-    
-    channel = await client.channels.cache.find(channel => channel.id === process.env.CHANNELID);
 });
 
 async function PingMe(stocks, channel, user, message){
@@ -86,7 +84,7 @@ client.on('message', (message) => {
         if(command === 'delete') {
             if(message.author.id === process.env.USERID){
                 console.log('coommand is delete');
-                channel.bulkDelete(100)
+                message.channel.bulkDelete(100)
                 .then(messages => console.log(`Bulk deleted ${messages.size} messages`))
                 .catch(console.error); 
             }

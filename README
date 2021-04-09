@@ -1,0 +1,7 @@
+place create a .env file in root and npm install before running
+
+in .env file place bot token and mongodb token
+
+//I guess we just use the same bot token and mongodb token
+
+To start server you can just use node server
