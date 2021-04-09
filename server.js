@@ -23,8 +23,7 @@ mongo.connect( err => {
 
 client.on('ready', async () => {
     console.log(`bot is ready ${client.user.tag}`);
-
-    const user = await client.users.fetch(process.env.USERID).catch(() => null);
+    
     channel = await client.channels.cache.find(channel => channel.id === process.env.CHANNELID);
 });
 
@@ -34,7 +33,6 @@ async function PingMe(stocks, channel, user, message){
         if(res[0] === true) {
             console.log('alert triggered');
             message.author.send(`<@${user.id}> position ${stock.stockName} is above buy price of ${stock.cutloss}. Current price is ${res[1]}`);
-            // channel.send(`<@${user.id}> position ${stock.stockName} is above buy price of ${stock.cutloss}. Current price is ${res[1]}`);
         }
     });
 }
