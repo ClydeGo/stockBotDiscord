@@ -5,3 +5,7 @@ in .env file place bot token and mongodb token
 //I guess we just use the same bot token and mongodb token
 
 To start server you can just use node server
+
+create a new branch for every new thing you add and merge it to develop
+
+master branch is for deployment only
